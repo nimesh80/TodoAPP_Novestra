@@ -2,8 +2,8 @@
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
   </Folder>
-  <Project Path="../Todo.Application/Todo.Application.csproj" />
+  <Project Path="../Todo.API/Todo.API.csproj" />
   <Project Path="../Todo.Domain/Todo.Domain.csproj" />
   <Project Path="../Todo.Infrastructure/Todo.Infrastructure.csproj" />
-  <Project Path="Todo.API.csproj" />
+  <Project Path="Todo.Application.csproj" />
 </Solution>
