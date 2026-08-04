@@ -9,6 +9,17 @@ using Todo.Infrastructure.Repositories;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add controllers and configure JSON options
+
+builder.Services.AddCors(Options =>
+{
+    Options.AddPolicy("ReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -40,6 +51,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("ReactApp");
 
 app.UseAuthorization();
 
