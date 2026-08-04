@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Todo.Domain.Entities;
 
@@ -11,31 +8,33 @@ namespace Todo.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
-            //primary key
             builder.HasKey(u => u.UserId);
 
-            //first name
             builder.Property(u => u.FirstName)
                 .IsRequired()
                 .HasMaxLength(100);
 
-            //last name
             builder.Property(u => u.LastName)
                 .IsRequired()
                 .HasMaxLength(100);
 
-            //email
             builder.Property(u => u.Email)
                 .IsRequired()
                 .HasMaxLength(255);
 
-            //unique index on email
             builder.HasIndex(u => u.Email)
                 .IsUnique();
 
-            //created at
-            builder.Property(u => u.CreatedAt)
-                .IsRequired();
+            builder.HasData(
+                new User
+                {
+                    UserId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                    FirstName = "Test",
+                    LastName = "User",
+                    Email = "test.user@example.com",
+                    CreatedAt = new DateTime(2026, 8, 4, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
         }
     }
 }

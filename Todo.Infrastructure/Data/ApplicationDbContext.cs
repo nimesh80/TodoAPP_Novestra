@@ -23,6 +23,7 @@ namespace Todo.Infrastructure.Data
 
             // Apply all entity configurations automatically
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
         }
     }
 }
