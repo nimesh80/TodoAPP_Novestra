@@ -70,7 +70,7 @@ namespace Todo.Application.Services
                 Priority = createTaskDto.Priority,
                 Status = TaskState.Pending,
 
-                DueDate = createTaskDto.DueDate,
+                DueDate = null,
 
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = null,
@@ -91,7 +91,11 @@ namespace Todo.Application.Services
             task.CategoryId = updateTaskDto.CategoryId;
             task.Priority = updateTaskDto.Priority;
             task.Status = updateTaskDto.Status;
-            task.DueDate = updateTaskDto.DueDate;
+            task.DueDate = updateTaskDto.DueDate.HasValue
+                ? DateTime.SpecifyKind(
+                    updateTaskDto.DueDate.Value,
+                    DateTimeKind.Utc)
+                : null;
 
             task.UpdatedAt = DateTime.UtcNow;
 
