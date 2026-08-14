@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
+import { toast } from "react-toastify";
 
 import Navbar from "../components/Navbar/Navbar";
 import Toolbar from "../components/Toolbar/Toolbar";
@@ -9,6 +11,8 @@ import TaskModal from "../components/TaskModal/TaskModal";
 import {
     getTasks,
     createTask,
+    updateTask,
+    deleteTask
 } from "../services/taskService";
 
 import { getCategories } from "../services/categoryService";
@@ -16,12 +20,16 @@ import { getCategories } from "../services/categoryService";
 import type { Task } from "../model/Task";
 import type { Category } from "../model/Category";
 import type { CreateTaskRequest } from "../model/CreateTaskRequest";
+import type { UpdateTaskRequest } from "../model/UpdateTaskRequest";
 
 function Dashboard() {
 
+    const { getAccessTokenSilently } = useAuth0();
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
     const [filters, setFilters] = useState({
         search: "",
@@ -30,21 +38,28 @@ function Dashboard() {
         priority: "",
     });
 
-    const loadTasks = async () => {
+    const getToken = async () => {
 
-        try {
-
-            const data = await getTasks();
-
-            setTasks(data);
-
-        } catch (error) {
-
-            console.error(error);
-
-        }
+        return await getAccessTokenSilently({
+            authorizationParams: {
+                audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+            },
+        });
 
     };
+
+const loadTasks = async () => {
+    try {
+        const token = await getToken();
+
+        const data = await getTasks(token);
+
+        setTasks(data);
+    }
+    catch (error) {
+        console.error(error);
+    }
+};
 
     const loadCategories = async () => {
 
@@ -54,7 +69,8 @@ function Dashboard() {
 
             setCategories(data);
 
-        } catch (error) {
+        }
+        catch (error) {
 
             console.error(error);
 
@@ -77,30 +93,98 @@ function Dashboard() {
 
     }, []);
 
-    const handleCreateTask = async (
-        task: CreateTaskRequest
+    const handleSaveTask = async (
+        task: CreateTaskRequest | UpdateTaskRequest
     ) => {
 
         try {
 
-            await createTask(task);
+            const token = await getToken();
+
+            if (selectedTask) {
+
+                const updateRequest: UpdateTaskRequest = {
+
+                    title: task.title,
+                    description: task.description,
+                    categoryId: task.categoryId,
+                    priority: task.priority,
+                    dueDate: task.dueDate,
+                    status: (task as UpdateTaskRequest).status
+
+                };
+
+                await updateTask(
+                    selectedTask.taskId,
+                    updateRequest,
+                    token
+                );
+
+                toast.success("Task updated successfully.");
+
+            }
+            else {
+
+                await createTask(
+                    task as CreateTaskRequest,
+                    token
+                );
+
+                toast.success("Task created successfully.");
+
+            }
 
             await loadTasks();
 
+            setSelectedTask(null);
             setIsModalOpen(false);
 
-        } catch (error) {
+        }
+        catch (error) {
 
             console.error(error);
 
-            alert("Failed to create task.");
+            toast.error("Failed to save task.");
 
         }
 
     };
+
+    const handleDeleteTask = async (
+        id: string
+    ) => {
+
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this task?"
+        );
+
+        if (!confirmed) return;
+
+        try {
+
+            const token = await getToken();
+
+            await deleteTask(id, token);
+
+            await loadTasks();
+
+            toast.success("Task deleted successfully.");
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast.error("Failed to delete task.");
+
+        }
+
+    };
+
     const filteredTasks = useMemo(() => {
 
         return [...tasks]
+
             .filter(task => {
 
                 const matchesSearch =
@@ -128,6 +212,7 @@ function Dashboard() {
                 );
 
             })
+
             .sort((a, b) => {
 
                 if (!a.dueDate) return 1;
@@ -147,7 +232,7 @@ function Dashboard() {
 
         <div className="min-h-screen bg-gray-100">
 
-            <Navbar userName="Test User" />
+            <Navbar />
 
             <div className="mx-auto max-w-7xl p-6">
 
@@ -169,9 +254,12 @@ function Dashboard() {
                     </div>
 
                     <NewTaskButton
-                        onClick={() =>
-                            setIsModalOpen(true)
-                        }
+                        onClick={() => {
+
+                            setSelectedTask(null);
+                            setIsModalOpen(true);
+
+                        }}
                     />
 
                 </div>
@@ -195,8 +283,13 @@ function Dashboard() {
                             <TaskCard
                                 key={task.taskId}
                                 task={task}
-                                onEdit={() => { }}
-                                onDelete={() => { }}
+                                onEdit={(task) => {
+
+                                    setSelectedTask(task);
+                                    setIsModalOpen(true);
+
+                                }}
+                                onDelete={handleDeleteTask}
                             />
 
                         ))}
@@ -209,11 +302,15 @@ function Dashboard() {
 
             <TaskModal
                 isOpen={isModalOpen}
-                onClose={() =>
-                    setIsModalOpen(false)
-                }
+                onClose={() => {
+
+                    setSelectedTask(null);
+                    setIsModalOpen(false);
+
+                }}
                 categories={categories}
-                onSave={handleCreateTask}
+                selectedTask={selectedTask}
+                onSave={handleSaveTask}
             />
 
         </div>

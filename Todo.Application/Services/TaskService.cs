@@ -12,14 +12,20 @@ namespace Todo.Application.Services
     public class TaskService : ITaskService
     {
         private readonly ITaskRepository _taskRepository;
-        public TaskService(ITaskRepository taskRepository)
+        private readonly ICurrentUserService _currentUserService;
+
+        public TaskService(
+            ITaskRepository taskRepository,
+            ICurrentUserService currentUserService)
         {
             _taskRepository = taskRepository;
+            _currentUserService = currentUserService;
         }
-       
+
         public async Task<IEnumerable<TaskDto>> GetAllTasksAsync()
         {
-            var tasks = await _taskRepository.GetAllAsync();
+            var userId = await _currentUserService.GetCurrentUserIdAsync();
+            var tasks = await _taskRepository.GetByUserIdAsync(userId);
 
             return tasks.Select(task => new TaskDto
             {
@@ -37,9 +43,11 @@ namespace Todo.Application.Services
 
         public async Task<TaskDto?> GetTaskByIdAsync(Guid id)
         {
+            var userId = await _currentUserService.GetCurrentUserIdAsync();
+
             var task = await _taskRepository.GetByIdAsync(id);
 
-            if (task == null)
+            if (task == null || task.UserId != userId)
                 return null;
 
             return new TaskDto
@@ -56,8 +64,10 @@ namespace Todo.Application.Services
             };
         }
 
-        public async Task CreateTaskAsync(CreateTaskDto createTaskDto, Guid userId)
+        public async Task CreateTaskAsync(CreateTaskDto createTaskDto)
         {
+            var userId = await _currentUserService.GetCurrentUserIdAsync();
+
             var task = new TaskItem
             {
                 TaskId = Guid.NewGuid(),
@@ -70,20 +80,27 @@ namespace Todo.Application.Services
                 Priority = createTaskDto.Priority,
                 Status = TaskState.Pending,
 
-                DueDate = null,
+                DueDate = createTaskDto.DueDate.HasValue
+                    ? DateTime.SpecifyKind(
+                        createTaskDto.DueDate.Value,
+                        DateTimeKind.Utc)
+                    : null,
 
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = null,
                 CompletedAt = null
             };
+
             await _taskRepository.AddAsync(task);
         }
 
         public async Task UpdateTaskAsync(Guid id, UpdateTaskDto updateTaskDto)
         {
+            var userId = await _currentUserService.GetCurrentUserIdAsync();
+
             var task = await _taskRepository.GetByIdAsync(id);
 
-            if (task == null)
+            if (task == null || task.UserId != userId)
                 throw new KeyNotFoundException("Task not found");
 
             task.Title = updateTaskDto.Title;
@@ -113,9 +130,11 @@ namespace Todo.Application.Services
 
         public async Task DeleteTaskAsync(Guid id)
         {
+            var userId = await _currentUserService.GetCurrentUserIdAsync();
+
             var task = await _taskRepository.GetByIdAsync(id);
 
-            if (task == null)
+            if (task == null || task.UserId != userId)
                 throw new KeyNotFoundException("Task not found");
 
             await _taskRepository.DeleteAsync(task);

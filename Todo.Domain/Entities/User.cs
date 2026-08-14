@@ -8,13 +8,17 @@ namespace Todo.Domain.Entities
     public class User
     {
         public Guid UserId { get; set; }
+
+        public string Auth0Id { get; set; } = string.Empty;
+
         public string FirstName { get; set; } = string.Empty;
+
         public string LastName { get; set; } = string.Empty;
+
         public string Email { get; set; } = string.Empty;
+
         public DateTime CreatedAt { get; set; }
 
-        //Navigation property for related tasks
-        //One User - Many TaskItems
         public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
     }
 }

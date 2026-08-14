@@ -5,6 +5,10 @@ using Todo.Application.Interfaces.Services;
 using Todo.Application.Services;
 using Todo.Infrastructure.Data;
 using Todo.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,12 +24,27 @@ builder.Services.AddCors(Options =>
     });
 });
 
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = $"https://{builder.Configuration["Auth0:Domain"]}";
+        options.Audience = builder.Configuration["Auth0:Audience"];
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            NameClaimType = "name"
+        };
+    });
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(
             new JsonStringEnumConverter());
     });
+
+builder.Services.AddHttpContextAccessor();
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -40,6 +59,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 // Services
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddOpenApi();
 
@@ -53,6 +73,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("ReactApp");
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

@@ -1,32 +1,99 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { Category } from "../../model/Category";
 import type { CreateTaskRequest } from "../../model/CreateTaskRequest";
+import type { UpdateTaskRequest } from "../../model/UpdateTaskRequest";
+import type { Task } from "../../model/Task";
+
 
 type TaskModalProps = {
     isOpen: boolean;
     onClose: () => void;
     categories: Category[];
-    onSave: (task: CreateTaskRequest) => Promise<void>;
+    selectedTask: Task | null;
+    onSave: (
+        task: CreateTaskRequest | UpdateTaskRequest
+    ) => Promise<void>;
 };
 
-const initialForm: CreateTaskRequest = {
+type TaskForm = {
+    title: string;
+    description: string;
+    categoryId: string;
+    priority: number;
+    dueDate: string;
+    status: number;
+};
+
+const initialForm: TaskForm = {
     title: "",
     description: "",
     categoryId: "",
     priority: 1,
     dueDate: "",
+    status: 0,
 };
 
 function TaskModal({
     isOpen,
     onClose,
     categories,
+    selectedTask,
     onSave,
 }: TaskModalProps) {
 
+    console.log(selectedTask);
+
     const [formData, setFormData] =
-        useState<CreateTaskRequest>(initialForm);
+        useState<TaskForm>(initialForm); 
+
+    useEffect(() => {
+
+    if (!isOpen) return;
+
+    if (selectedTask) {
+
+        const category = categories.find(
+            c => c.categoryName === selectedTask.categoryName
+        );
+
+        setFormData({
+
+            title: selectedTask.title,
+
+            description: selectedTask.description ?? "",
+
+            categoryId: category?.categoryId ?? "",
+
+            priority:
+                selectedTask.priority.toLowerCase() === "high"
+                    ? 2
+                    : selectedTask.priority.toLowerCase() === "medium"
+                        ? 1
+                        : 0,
+
+            dueDate:
+                selectedTask.dueDate
+                    ? selectedTask.dueDate.substring(0, 10)
+                    : "",
+
+            status:
+                selectedTask.status.toLowerCase() === "completed"
+                    ? 2
+                    : selectedTask.status.toLowerCase() === "inprogress"
+                        ? 1
+                        : 0,
+
+        });
+
+    }
+    else {
+
+        setFormData(initialForm);
+
+    }
+
+}, [selectedTask, categories, isOpen]);
 
     const handleChange = (
         e: React.ChangeEvent<
@@ -74,7 +141,32 @@ function TaskModal({
 
         }
 
-        await onSave(formData);
+        if (selectedTask) {
+
+           const updateRequest: UpdateTaskRequest = {
+
+                title: formData.title,
+
+                description: formData.description,
+
+                categoryId: formData.categoryId,
+
+                dueDate: formData.dueDate,
+
+                priority: formData.priority,
+
+                status: formData.status
+
+            };
+
+            await onSave(updateRequest);
+
+        }
+        else {
+
+            await onSave(formData);
+
+        }
 
     };
 
@@ -89,7 +181,7 @@ function TaskModal({
                 <div className="flex items-center justify-between border-b p-6">
 
                     <h2 className="text-2xl font-bold">
-                        Create Task
+                        {selectedTask ? "Edit Task" : "Create Task"}
                     </h2>
 
                     <button
@@ -191,6 +283,29 @@ function TaskModal({
 
                         </div>
 
+                        {selectedTask && (
+
+                            <div>
+
+                                <label className="mb-2 block font-medium">
+                                    Status
+                                </label>
+
+                                <select
+                                    name="status"
+                                    value={formData.status}
+                                    onChange={handleChange}
+                                    className="w-full rounded-lg border p-3"
+                                >
+                                    <option value={0}>Pending</option>
+                                    <option value={1}>In Progress</option>
+                                    <option value={2}>Completed</option>
+                                </select>
+
+                            </div>
+
+                        )}
+
                         <div>
 
                             <label className="mb-2 block font-medium">
@@ -224,8 +339,7 @@ function TaskModal({
                         onClick={handleSave}
                         className="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
                     >
-                        Save Task
-                    </button>
+                        {selectedTask ? "Update Task" : "Save Task"}                    </button>
 
                 </div>
 

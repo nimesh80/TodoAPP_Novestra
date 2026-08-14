@@ -22,13 +22,21 @@ namespace Todo.Infrastructure.Configurations
                 .IsRequired()
                 .HasMaxLength(255);
 
+            builder.Property(u => u.Auth0Id)
+                .IsRequired()
+                .HasMaxLength(255);
+
             builder.HasIndex(u => u.Email)
+                .IsUnique();
+
+            builder.HasIndex(u => u.Auth0Id)
                 .IsUnique();
 
             builder.HasData(
                 new User
                 {
                     UserId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                    Auth0Id = "test-user",
                     FirstName = "Test",
                     LastName = "User",
                     Email = "test.user@example.com",

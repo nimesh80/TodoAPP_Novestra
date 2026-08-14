@@ -69,12 +69,19 @@ function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
 
                 </div>
 
-                <div className="text-sm text-gray-600">
+                <div className="space-y-2 text-sm text-gray-600">
 
-                    <strong>Due Date:</strong>{" "}
-                    {task.dueDate
-                        ? new Date(task.dueDate).toLocaleDateString()
-                        : "No Due Date"}
+                    <div>
+                        <strong>Created:</strong>{" "}
+                        {new Date(task.createdAt).toLocaleDateString()}
+                    </div>
+
+                    <div>
+                        <strong>Due Date:</strong>{" "}
+                        {task.dueDate
+                            ? new Date(task.dueDate).toLocaleDateString()
+                            : "No Due Date"}
+                    </div>
 
                 </div>
 

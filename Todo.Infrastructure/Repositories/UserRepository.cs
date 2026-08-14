@@ -28,6 +28,12 @@ namespace Todo.Infrastructure.Repositories
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
 
+        public async Task<User?> GetByAuth0IdAsync(string auth0Id)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Auth0Id == auth0Id);
+        }
+
         public async Task AddAsync(User user)
         {
             await _context.Users.AddAsync(user);
@@ -39,5 +45,7 @@ namespace Todo.Infrastructure.Repositories
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
+
+
     }
 }

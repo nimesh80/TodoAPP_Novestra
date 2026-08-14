@@ -9,7 +9,7 @@ namespace Todo.Application.Interfaces.Services
     {
         Task<IEnumerable<TaskDto>> GetAllTasksAsync();
         Task<TaskDto?> GetTaskByIdAsync(Guid id);
-        Task CreateTaskAsync(CreateTaskDto taskDto, Guid userId);
+        Task CreateTaskAsync(CreateTaskDto taskDto);
         Task UpdateTaskAsync(Guid id, UpdateTaskDto taskDto);
         Task DeleteTaskAsync(Guid id);
     }
